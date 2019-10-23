@@ -1,6 +1,7 @@
 package nec
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sync"
@@ -15,19 +16,13 @@ type Projector struct {
 }
 
 var commands = map[string][]byte{
-	"PowerOn":        {0x02, 0x00, 0x00, 0x00, 0x00, 0x02}, // Powers on the projector
-	"Standby":        {0x02, 0x01, 0x00, 0x00, 0x00, 0x03}, // Puts the projector on standby
-	"ChangeInput":    {0x02, 0x03, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00},
 	"MuteOn":         {0x02, 0x12, 0x00, 0x00, 0x00, 0x14},
 	"MuteOff":        {0x02, 0x13, 0x00, 0x00, 0x00, 0x15},
 	"Volume":         {0x03, 0x10, 0x00, 0x00, 0x05, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00}, // Used for changing the volume level of the projector
 	"ScreenBlankOn":  {0x02, 0x10, 0x00, 0x00, 0x00, 0x12},                               // Blanks the screen
 	"ScreenBlankOff": {0x02, 0x11, 0x00, 0x00, 0x00, 0x13},                               // Unblanks the screen
-	"PowerStatus":    {0x00, 0x85, 0x00, 0x00, 0x01, 0x01, 0x87},                         // Used for getting the projector power status
 	"MuteStatus":     {0x00, 0x85, 0x00, 0x00, 0x01, 0x03, 0x89},                         // Used for getting the mute status
 	"VolumeLevel":    {0x03, 0x04, 0x00, 0x00, 0x03, 0x05, 0x00, 0x00, 0x00},             // Used for getting the volume level
-	"InputStatus":    {0x00, 0x85, 0x00, 0x00, 0x01, 0x02, 0x88},                         // Used for retreiving the current input
-	"ActiveInput":    {0x00, 0xBF, 0x00, 0x00, 0x01, 0x02, 0xC2},                         // Used for getting the ActiveInput Status of the projector
 }
 
 func getConnection(key interface{}) (pooled.Conn, error) {
@@ -45,7 +40,7 @@ func getConnection(key interface{}) (pooled.Conn, error) {
 }
 
 // SendCommand sends the byte array to the desired address of projector
-func (p *Projector) SendCommand(addr string, cmd []byte) ([]byte, error) {
+func (p *Projector) SendCommand(ctx context.Context, addr string, cmd []byte) ([]byte, error) {
 	p.poolInit.Do(func() {
 		// create the pool
 		p.pool = pooled.NewPool(45*time.Second, 400*time.Millisecond, getConnection)
