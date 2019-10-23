@@ -26,11 +26,8 @@ func (p *Projector) GetPower(ctx context.Context, addr string) (string, error) {
 		return "", fmt.Errorf("bad response from projector: 0x%x", resp)
 	case resp[7] == 0b1:
 		return "on", nil
-	case resp[7] == 0b0:
-		return "standby", nil
 	default:
-		// shoudn't ever happen (it has to be a 0 or 1)
-		return "", fmt.Errorf("bad response from projector: 0x%x", resp)
+		return "standby", nil
 	}
 }
 
