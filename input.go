@@ -1,4 +1,4 @@
-package necdriver
+package nec
 
 import (
 	"context"
