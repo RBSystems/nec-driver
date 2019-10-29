@@ -37,7 +37,7 @@ func (f optionFunc) apply(o *options) {
 	f(o)
 }
 
-func WithConnTTL(t time.Duration) Option {
+func WithTTL(t time.Duration) Option {
 	return optionFunc(func(o *options) {
 		o.ttl = t
 	})
