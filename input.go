@@ -63,7 +63,7 @@ func (p *Projector) SetInput(ctx context.Context, input string) error {
 	return err
 }
 
-func (p *Projector) GetActiveSignal(ctx context.Context, addr string) (bool, error) {
+func (p *Projector) GetActiveSignal(ctx context.Context) (bool, error) {
 	// TODO
 	return false, fmt.Errorf("not implemented")
 }
