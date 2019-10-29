@@ -17,8 +17,8 @@ var (
 	PowerStandby = []byte{0x02, 0x01, 0x00, 0x00, 0x00, 0x03}
 )
 
-func (p *Projector) GetPower(ctx context.Context, addr string) (string, error) {
-	resp, err := p.SendCommand(ctx, addr, PowerStatus)
+func (p *Projector) GetPower(ctx context.Context) (string, error) {
+	resp, err := p.SendCommand(ctx, PowerStatus)
 	switch {
 	case err != nil:
 		return "", err
@@ -31,7 +31,7 @@ func (p *Projector) GetPower(ctx context.Context, addr string) (string, error) {
 	}
 }
 
-func (p *Projector) SetPower(ctx context.Context, addr string, power string) error {
+func (p *Projector) SetPower(ctx context.Context, power string) error {
 	var cmd []byte
 	switch {
 	case strings.EqualFold(power, "on"):
@@ -42,6 +42,6 @@ func (p *Projector) SetPower(ctx context.Context, addr string, power string) err
 		return fmt.Errorf("unable to set power state to %q: must be %q or %q", power, "on", "standby")
 	}
 
-	_, err := p.SendCommand(ctx, addr, cmd)
+	_, err := p.SendCommand(ctx, cmd)
 	return err
 }

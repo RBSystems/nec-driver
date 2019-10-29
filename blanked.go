@@ -16,8 +16,8 @@ var (
 	Unblank = []byte{0x02, 0x11, 0x00, 0x00, 0x00, 0x13}
 )
 
-func (p *Projector) GetBlanked(ctx context.Context, addr string) (bool, error) {
-	resp, err := p.SendCommand(ctx, addr, BlankMuteStatus)
+func (p *Projector) GetBlanked(ctx context.Context) (bool, error) {
+	resp, err := p.SendCommand(ctx, BlankMuteStatus)
 	switch {
 	case err != nil:
 		return false, err
@@ -30,12 +30,12 @@ func (p *Projector) GetBlanked(ctx context.Context, addr string) (bool, error) {
 	}
 }
 
-func (p *Projector) SetBlanked(ctx context.Context, addr string, blanked bool) error {
+func (p *Projector) SetBlanked(ctx context.Context, blanked bool) error {
 	cmd := Unblank
 	if blanked {
 		cmd = Blank
 	}
 
-	_, err := p.SendCommand(ctx, addr, cmd)
+	_, err := p.SendCommand(ctx, cmd)
 	return err
 }

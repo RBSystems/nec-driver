@@ -4,49 +4,89 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
-	"github.com/byuoitav/pooled"
+	"github.com/byuoitav/connpool"
 )
 
 type Projector struct {
-	poolInit sync.Once
-	pool     *pooled.Pool
+	Address string
+	Log     Logger
+
+	pool *connpool.Pool
 }
 
-/*
-var commands = map[string][]byte{
-	"MuteOn":      {0x02, 0x12, 0x00, 0x00, 0x00, 0x14},
-	"MuteOff":     {0x02, 0x13, 0x00, 0x00, 0x00, 0x15},
-	"Volume":      {0x03, 0x10, 0x00, 0x00, 0x05, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00}, // Used for changing the volume level of the projector
-	"VolumeLevel": {0x03, 0x04, 0x00, 0x00, 0x03, 0x05, 0x00, 0x00, 0x00},             // Used for getting the volume level
+var (
+	_defaultTTL   = 30 * time.Second
+	_defaultDelay = 500 * time.Millisecond
+)
+
+type options struct {
+	ttl    time.Duration
+	delay  time.Duration
+	logger Logger
 }
-*/
 
-func getConnection(key interface{}) (pooled.Conn, error) {
-	address, ok := key.(string)
-	if !ok {
-		return nil, fmt.Errorf("key must be a string")
+type Option interface {
+	apply(*options)
+}
+
+type optionFunc func(*options)
+
+func (f optionFunc) apply(o *options) {
+	f(o)
+}
+
+func WithConnTTL(t time.Duration) Option {
+	return optionFunc(func(o *options) {
+		o.ttl = t
+	})
+}
+
+func WithDelay(t time.Duration) Option {
+	return optionFunc(func(o *options) {
+		o.delay = t
+	})
+}
+
+func WithLogger(l Logger) Option {
+	return optionFunc(func(o *options) {
+		o.logger = l
+	})
+}
+
+func NewProjector(addr string, opts ...Option) *Projector {
+	options := options{
+		ttl:   _defaultTTL,
+		delay: _defaultDelay,
 	}
 
-	conn, err := net.DialTimeout("tcp", address+":7142", 10*time.Second)
-	if err != nil {
-		return nil, err
+	for _, o := range opts {
+		o.apply(&options)
 	}
 
-	return pooled.Wrap(conn), nil
+	p := &Projector{
+		Address: addr,
+		pool: &connpool.Pool{
+			TTL:    options.ttl,
+			Delay:  options.delay,
+			Logger: options.logger,
+		},
+	}
+
+	p.pool.NewConnection = func(ctx context.Context) (net.Conn, error) {
+		d := net.Dialer{}
+		return d.DialContext(ctx, "tcp", p.Address+":7142")
+	}
+
+	return p
 }
 
 // SendCommand sends the byte array to the desired address of projector
-func (p *Projector) SendCommand(ctx context.Context, addr string, cmd []byte) ([]byte, error) {
-	p.poolInit.Do(func() {
-		// create the pool
-		p.pool = pooled.NewPool(45*time.Second, 400*time.Millisecond, getConnection)
-	})
-
+func (p *Projector) SendCommand(ctx context.Context, cmd []byte) ([]byte, error) {
 	var resp []byte
-	err := p.pool.Do(addr, func(conn pooled.Conn) error {
+
+	err := p.pool.Do(ctx, func(conn connpool.Conn) error {
 		conn.SetWriteDeadline(time.Now().Add(3 * time.Second))
 
 		n, err := conn.Write(cmd)

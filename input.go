@@ -17,8 +17,8 @@ var (
 	ChangeInput = []byte{0x02, 0x03, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00}
 )
 
-func (p *Projector) GetInput(ctx context.Context, addr string) (string, error) {
-	resp, err := p.SendCommand(ctx, addr, InputStatus)
+func (p *Projector) GetInput(ctx context.Context) (string, error) {
+	resp, err := p.SendCommand(ctx, InputStatus)
 	switch {
 	case err != nil:
 		return "", nil
@@ -38,7 +38,7 @@ func (p *Projector) GetInput(ctx context.Context, addr string) (string, error) {
 	return fmt.Sprintf("%s%d", input, resp[7]), nil
 }
 
-func (p *Projector) SetInput(ctx context.Context, addr string, input string) error {
+func (p *Projector) SetInput(ctx context.Context, input string) error {
 	// copy the change input command
 	cmd := make([]byte, len(ChangeInput))
 	copy(cmd, ChangeInput)
@@ -59,7 +59,7 @@ func (p *Projector) SetInput(ctx context.Context, addr string, input string) err
 	cmd[7] = getChecksum(cmd)
 
 	// send the command
-	_, err := p.SendCommand(ctx, addr, cmd)
+	_, err := p.SendCommand(ctx, cmd)
 	return err
 }
 
