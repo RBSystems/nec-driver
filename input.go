@@ -17,13 +17,14 @@ var (
 	ChangeInput = []byte{0x02, 0x03, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00}
 )
 
-func (p *Projector) GetInput(ctx context.Context) (string, error) {
+func (p *Projector) GetVideoInputs(ctx context.Context) (map[string]string, error) {
+	toReturn := make(map[string]string)
 	resp, err := p.SendCommand(ctx, InputStatus)
 	switch {
 	case err != nil:
-		return "", nil
+		return toReturn, nil
 	case len(resp) < 9:
-		return "", fmt.Errorf("")
+		return toReturn, fmt.Errorf("")
 	}
 
 	input := ""
@@ -35,10 +36,11 @@ func (p *Projector) GetInput(ctx context.Context) (string, error) {
 	}
 
 	// add on the number of the input (e.g., hdmi1)
-	return fmt.Sprintf("%s%d", input, resp[7]), nil
+	toReturn[""] = fmt.Sprintf("%s%d", input, resp[7])
+	return toReturn, nil
 }
 
-func (p *Projector) SetInput(ctx context.Context, input string) error {
+func (p *Projector) SetVideoInput(ctx context.Context, output, input string) error {
 	// copy the change input command
 	cmd := make([]byte, len(ChangeInput))
 	copy(cmd, ChangeInput)
